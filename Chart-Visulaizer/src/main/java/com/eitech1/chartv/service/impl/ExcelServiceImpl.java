@@ -23,10 +23,14 @@ import com.eitech1.chartv.Entity.SheetEx;
 import com.eitech1.chartv.Entity.Tab;
 import com.eitech1.chartv.exceptions.ChartVException;
 import com.eitech1.chartv.exceptions.ChartVPersistenceException;
+import com.eitech1.chartv.response.dto.DataSetDto;
+import com.eitech1.chartv.response.dto.SheetExDto;
+import com.eitech1.chartv.response.dto.TabDto;
 import com.eitech1.chartv.response.template.Response;
 import com.eitech1.chartv.respository.SheetExRepository;
 import com.eitech1.chartv.service.ExcelService;
 import com.eitech1.chartv.service.util.DtoToEntityMapper;
+import com.eitech1.chartv.service.util.EntityToDtoMapper;
 import com.eitech1.chartv.util.ExcelUtil;
 
 @Service
@@ -41,10 +45,13 @@ public class ExcelServiceImpl implements ExcelService{
 	@Autowired
 	private DtoToEntityMapper dtoDtoToEntityMapper;
 	
+	@Autowired
+	private EntityToDtoMapper entityToDtoMapper;
+	
 	private String excelPath ="D:\\test excel\\";
 
 	@Override
-	public ResponseEntity<Response<SheetEx>> readExcel(MultipartFile multipartFile) throws  ChartVException {
+	public ResponseEntity<Response<SheetExDto>> readExcel(MultipartFile multipartFile) throws  ChartVException {
 		
 		try {
 			
@@ -57,25 +64,27 @@ public class ExcelServiceImpl implements ExcelService{
 		Workbook workbook=excelUtil.getExcel(filepath);
 		int x = workbook.getNumberOfSheets();
 		
-		String jsonData=null; //dataset json data initialize
-		List<DataSet> dataSetList=new ArrayList<DataSet>(); //dataset list to set with tab
 		List<Tab> tabList=new ArrayList<Tab>();//tab list to set with sheetEx
-		String tabTopic=null;//tab topic
 		
 		//dto to entity mapping (Sheet)
 		 SheetEx sheetEx = dtoDtoToEntityMapper.converToSheet();
 		
 		// Getting the Sheet at index zero
 		for (int i = 0; i < x; i++) {
+			
+			String jsonData=null; //dataset json data initialize
+			String tabTopic=null;//tab topic
+			
+			List<DataSet> dataSetList=new ArrayList<DataSet>(); //dataset list to set with tab
 			String header=null;
 			List<String> headerList=new ArrayList<String>();
+			
 
 			Sheet sheetTab = workbook.getSheetAt(i);
 			
 			//dto to entity mapping (Tab)
 			Tab tab= dtoDtoToEntityMapper.convertToTab(sheetTab.getSheetName(), sheetEx);
 			
-			//int noOfColumns = sheetTab.getRow(2).getLastCellNum();
 
 			// Create a DataFormatter to format and get each cell's value as String
 			DataFormatter dataFormatter = new DataFormatter();
@@ -87,12 +96,6 @@ public class ExcelServiceImpl implements ExcelService{
 			for (Row row : sheetTab) {
 			
 				List<String> rowValueList = new ArrayList<String>();
-				
-//				System.out.println(row.getRowNum());
-//				if (row.getRowNum() == 0) {
-//					tabTopic=
-//					continue; // just skip the rows if row number is 0 or 1
-//				}
  
 				for (Cell cell : row) {
 					cell.setCellType(CellType.STRING);
@@ -118,18 +121,41 @@ public class ExcelServiceImpl implements ExcelService{
 						    DataSet  dataSet = dtoDtoToEntityMapper.convertToDataSet(jsonData, tab);		
 						    dataSetList.add(dataSet);
 						}
-			
+						
 			} 
 			tab.setData(dataSetList);
 			tab.setTabTopic(tabTopic);
 			tabList.add(tab);
 			
+			
 		}
 		
 		sheetEx.setTabs(tabList);
-		sheetExRepository.save(sheetEx);
+		SheetEx sheetResponse = sheetExRepository.save(sheetEx);
 		
-		return Response.success(sheetEx, HttpStatus.OK);
+		//build the response
+		List<TabDto> tabDtoList= new ArrayList<TabDto>();
+		for(Tab tab : sheetResponse.getTabs()) {
+			List<DataSetDto> datasetDtoList=new ArrayList<DataSetDto>();
+			
+			for(DataSet dataset : tab.getData()) {
+				
+				
+				try {
+				datasetDtoList.add(entityToDtoMapper.convertToDataSetDto(dataset));
+				}catch (Exception e) {
+					System.out.println("test exp"+e.getMessage());// TODO: handle exception
+				}
+				}
+			//String dataJson=jsonArray.toString();
+			TabDto tabDto = entityToDtoMapper.convertToTabDto(tab,datasetDtoList);
+			tabDtoList.add(tabDto);
+		}
+		
+		
+		SheetExDto response = entityToDtoMapper.converToSheetExDto(sheetResponse, tabDtoList);
+		
+		return Response.success(response, HttpStatus.OK);
 
 		} catch (ChartVException e) {
 			throw e;
