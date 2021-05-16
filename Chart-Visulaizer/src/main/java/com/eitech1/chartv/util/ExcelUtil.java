@@ -44,12 +44,11 @@ public class ExcelUtil {
 
 	public String createRowJson(List<String> excelData, List<String> headerList) throws ChartVException {
 
-		// TelecomAdSpend telAdSpend = new TelecomAdSpend();
-		HashMap<String, String> map = new HashMap<String, String>();
+		HashMap<String, Double> map = new HashMap<String, Double>();
 
 		int i = 0;
 		for (String cellvalue : excelData) {
-			map.put(headerList.get(i), cellvalue);
+			map.put(headerList.get(i),(double) Math.round(Double.parseDouble(cellvalue)));
 			i++;
 		}
 
@@ -59,7 +58,6 @@ public class ExcelUtil {
 		} catch (JsonProcessingException e) {
 			throw new ChartVException(e.getCause());
 		}
-		// telAdSpend.setJsonString(json);
 		System.out.println(json);
 
 		return json;
