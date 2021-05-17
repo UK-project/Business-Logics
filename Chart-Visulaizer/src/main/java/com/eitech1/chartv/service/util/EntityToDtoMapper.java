@@ -6,6 +6,7 @@ import org.springframework.stereotype.Component;
 
 import com.eitech1.chartv.Entity.DataSet;
 import com.eitech1.chartv.Entity.SheetEx;
+import com.eitech1.chartv.Entity.SheetMeta;
 import com.eitech1.chartv.Entity.Tab;
 import com.eitech1.chartv.response.dto.DataSetDto;
 import com.eitech1.chartv.response.dto.SheetExDto;
@@ -43,6 +44,15 @@ public class EntityToDtoMapper {
 				.uploadedDate(sheet.getUploadedDate())
 				.tabs(tabs)
 				.build();
+	}
+	
+	public SheetMetaDto convertToSheetMetaDto(SheetMeta sheetMeta) {
+		return SheetMetaDto.builder()
+				.id(sheetMeta.getId())
+				.sheetCode(sheetMeta.getSheetCode())
+				.sheetName(sheetMeta.getSheetName())
+				.build();
+			
 	}
 
 }
