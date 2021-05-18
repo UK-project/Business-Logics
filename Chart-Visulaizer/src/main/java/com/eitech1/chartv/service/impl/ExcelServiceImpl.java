@@ -23,6 +23,7 @@ import com.eitech1.chartv.Entity.SheetEx;
 import com.eitech1.chartv.Entity.Tab;
 import com.eitech1.chartv.exceptions.ChartVException;
 import com.eitech1.chartv.exceptions.ChartVPersistenceException;
+import com.eitech1.chartv.messages.ResponseMessages;
 import com.eitech1.chartv.response.dto.DataSetDto;
 import com.eitech1.chartv.response.dto.SheetExDto;
 import com.eitech1.chartv.response.dto.TabDto;
@@ -32,6 +33,7 @@ import com.eitech1.chartv.service.ExcelService;
 import com.eitech1.chartv.service.util.DtoToEntityMapper;
 import com.eitech1.chartv.service.util.EntityToDtoMapper;
 import com.eitech1.chartv.util.ExcelUtil;
+import com.eitech1.chartv.validator.ExcelValidation;
 
 @Service
 public class ExcelServiceImpl implements ExcelService{
@@ -48,13 +50,18 @@ public class ExcelServiceImpl implements ExcelService{
 	@Autowired
 	private EntityToDtoMapper entityToDtoMapper;
 	
-	private String excelPath ="D:\\test excel\\";
+	@Autowired
+	private ExcelValidation excelValidation;
+	
+	//private String excelPath ="D:\\test excel\\";
+	private String excelPath ="./src/main/resources/excel/";
+	
 
 	@Override
 	public ResponseEntity<Response<SheetExDto>> readExcel(MultipartFile multipartFile) throws  ChartVException {
 		
 		try {
-			
+			excelValidation.validateSheetName(multipartFile.getOriginalFilename());
 		String filepath = excelPath + multipartFile.getOriginalFilename();
 		
 		 byte[]	bytes = multipartFile.getBytes();
@@ -117,6 +124,7 @@ public class ExcelServiceImpl implements ExcelService{
 				}
 				System.out.println();
 						if (row.getRowNum() != 0 && row.getRowNum() != 1 ) {
+							excelValidation.validateColumn(headerList, rowValueList);
 							jsonData = excelUtil.createRowJson(rowValueList, headerList);
 						    DataSet  dataSet = dtoDtoToEntityMapper.convertToDataSet(jsonData, tab);		
 						    dataSetList.add(dataSet);
@@ -154,7 +162,7 @@ public class ExcelServiceImpl implements ExcelService{
 		
 		
 		SheetExDto response = entityToDtoMapper.converToSheetExDto(sheetResponse, tabDtoList);
-		
+
 		return Response.success(response, HttpStatus.OK);
 
 		} catch (ChartVException e) {
@@ -166,7 +174,8 @@ public class ExcelServiceImpl implements ExcelService{
 				throw new ChartVPersistenceException(hibernateException.getCause().getLocalizedMessage(), hibernateException.getCause());
 				
 			}
-			throw new ChartVException("Unexpected error occured", e);
+
+			throw new ChartVException(ResponseMessages.UNEXPECTED_ERROR, e);
 		}
 		
 		

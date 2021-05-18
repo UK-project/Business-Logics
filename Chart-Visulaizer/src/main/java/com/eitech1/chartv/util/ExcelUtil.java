@@ -11,6 +11,7 @@ import org.apache.poi.ss.usermodel.WorkbookFactory;
 import org.springframework.stereotype.Component;
 
 import com.eitech1.chartv.exceptions.ChartVException;
+import com.eitech1.chartv.messages.ResponseMessages;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
@@ -24,11 +25,11 @@ public class ExcelUtil {
 		try {
 			workbook = WorkbookFactory.create(new File(excelPath));
 		} catch (EncryptedDocumentException e) {
-			throw new ChartVException("The uploaded file is encrypted", e.getCause());
+			throw new ChartVException(ResponseMessages.ENCRYPTED_FILE, e.getCause());
 		} catch (InvalidFormatException e) {
-			throw new ChartVException("The uploaded file format is incorrect", e.getCause());
+			throw new ChartVException(ResponseMessages.INCORRECT_FILE_FORMAT, e.getCause());
 		} catch (Exception e) {
-			throw new ChartVException("Unexpected error occured", e.getCause());
+			throw new ChartVException(ResponseMessages.UNEXPECTED_ERROR, e.getCause());
 		}
 //				
 //		// Retrieving the number of sheets in the Workbook
